@@ -1,0 +1,16 @@
+[
+  {
+    "predicate": "hello_world_image",
+    "args": [
+      "release"
+    ],
+    "digest": "sha256:526fa52353d697800aa5ce5bb92cfbf9f8bc29f6d542eb121631de5756cdd711"
+  },
+  {
+    "predicate": "hello_world_image",
+    "args": [
+      "debug"
+    ],
+    "digest": "sha256:5bb4fe63b4af5599dc112d7d91d0c9719dff0788f9fddf2be67fa675d13e2ac4"
+  }
+]

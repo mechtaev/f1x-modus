@@ -1,0 +1,8 @@
+hello_world_image(profile) :-
+    (
+        profile = "debug",
+        from("ubuntu")
+    ;
+        profile = "release",
+        from("alpine")
+    )::set_cmd(["echo", "Hello", "World"]).
