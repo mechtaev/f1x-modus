@@ -1,0 +1,5 @@
+my_modue_test(profile) :-
+ (
+   from("mechtaev/f1x"::set_workdir("/home/f1x_demo"),
+   copy("./demo", "/home/f1x_demo"),
+ )::
