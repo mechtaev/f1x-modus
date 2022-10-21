@@ -8,5 +8,4 @@ my_modus_test_image(profile) :-
         from("mechtaev/f1x"),
         copy("./demo", "/home/f1x_demo")
     )::set_workdir("./home/f1x_demo")
-     ::set_entrypoint("/bin/sh")
      ::set_cmd(["f1x", "-f", "sort.c", "-d", "test.sh", "-t", "long", "-T", "100"]).

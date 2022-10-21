@@ -2,15 +2,15 @@
   {
     "predicate": "my_modus_test_image",
     "args": [
-      "debug"
+      "release"
     ],
-    "digest": "sha256:7d40776d6a4e628bf8f34097d47720f4a40283648b64e63c10551c06ae426561"
+    "digest": "sha256:c838f5c08e34a4ecd845a5a398234868a45723fe44d336282c9f2f31a4120ad6"
   },
   {
     "predicate": "my_modus_test_image",
     "args": [
-      "release"
+      "debug"
     ],
-    "digest": "sha256:9b6fa18ee811fbb664f05d9317617d9f5c8c6f3a11e8b6c8de60c39ccc57ff42"
+    "digest": "sha256:c46b06a84b027a2ad8a4269a17ea9329480e1c3e9404158816b6c311ceb124ba"
   }
 ]
