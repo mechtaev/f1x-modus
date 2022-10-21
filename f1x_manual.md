@@ -1,6 +1,8 @@
 # f1x command:
 ## options
 
-Options | #Explanations 
+Options | Explanations 
 --- | --- 
-Seconds | 301 
+-d | 301 
+-d | 302 
+
