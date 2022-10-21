@@ -1,5 +1,5 @@
 # print proof tree of a given query
-modus prood . 'Image_name(X)'
+modus proof . 'Image_name(X)'
 
 # build debug or release images based on Modusfile
 modus build . 'my_modus_test_image(X)' --json=build.json
