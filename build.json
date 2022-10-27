@@ -1,16 +1,10 @@
 [
   {
-    "predicate": "my_modus_test_image",
+    "predicate": "patch",
     "args": [
-      "debug"
+      "f1x",
+      "demo"
     ],
-    "digest": "sha256:c46b06a84b027a2ad8a4269a17ea9329480e1c3e9404158816b6c311ceb124ba"
-  },
-  {
-    "predicate": "my_modus_test_image",
-    "args": [
-      "release"
-    ],
-    "digest": "sha256:c838f5c08e34a4ecd845a5a398234868a45723fe44d336282c9f2f31a4120ad6"
+    "digest": "sha256:d93a8ec9f9978e023652f23c2d8716daa25622d9eb82208f9a64a09c47595c55"
   }
 ]
