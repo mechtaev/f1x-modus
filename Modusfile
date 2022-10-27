@@ -1,11 +1,12 @@
-my_modus_test_image(profile) :-
-    (
-        profile = "debug",
-        from("mechtaev/f1x"),
-        copy("./demo", "/home/f1x_demo")
-    ;
-        profile = "release",
-        from("mechtaev/f1x"),
-        copy("./demo", "/home/f1x_demo")
-    )::set_workdir("./home/f1x_demo")
-     ::set_cmd(["f1x", "-f", "sort.c", "-d", "test.sh", "-t", "long", "-T", "100"]).
+project("demo").
+
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+
+checkout("demo", "/home/f1x_demo") :-
+	copy("./demo", "/home/f1x_demo").
+
+patch(tool, project) :-
+	from("mechtaev/f1x"),
+	checkout(project, project_dir),
+	config(project, tool, config),
+	run(f"cd ${project_dir} && f1x ${config}").
