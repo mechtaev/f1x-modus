@@ -14,3 +14,9 @@ jq '.[] | [.digest, .predicate + ":" + (.args | join("-"))] | join(" ")' build.j
 
 ### images can be seen using docker
 docker images | grep ImageName
+
+### create a new container
+docker create -ti --name container_name image_name:tag /bin/bash
+
+### start the container
+docker start -ai contain_name
