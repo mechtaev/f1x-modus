@@ -1,0 +1,43 @@
+base_image("ubuntu") :- from("mechtaev/ubuntu-16.04-llvm-3.8.1").
+
+layer_image("docker") :- from("docker").
+
+layerrr_image("f1x") :- from("mechtaev/f1x").
+
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+config("demo2", "f1x", "-f sort.c -d test.sh -t long -T 100").
+
+
+
+add_git :-
+  run("apt-get update && apt-get install -y git").
+
+pull_tool :-
+    run("mkdir /home/f1x_tool"),
+    run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+
+
+copy_file("demo", "/home/f1x_demo") :-
+  copy("./demo", "/home/f1x_demo").
+
+build_tool(tool) :-
+  run("docker build /home/f1x_tool -t mechtaev/f1x").
+
+patch(base, "prod", project, tool) :-
+  base_image("ubuntu"),
+  add_git,
+  pull_tool,
+  patch(base, "dev", project, tool)::copy("/home", "/home").
+
+patch(base, "dev", project, tool) :-
+  layer_image(base),
+  build_tool(tool),
+  # copy("/home", "/home"),
+  patch("f1x", "devv", project, tool)::copy("/home", "/home").
+
+patch(base, "devv", "demo", tool) :-
+  layerrr_image("f1x"),
+  copy_file(project, project_dir),
+  config(project, tool, config),
+  run(f"cd ${project_dir} && f1x ${config}").
+  
