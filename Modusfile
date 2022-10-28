@@ -1,12 +1,41 @@
 project("demo").
+project("demo2").
+tool("f1x").
 
 config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+config("demo2", "f1x", "-f sort.c -d test.sh -t long -T 100").
 
-checkout("demo", "/home/f1x_demo") :-
-	copy("./demo", "/home/f1x_demo").
+add_rsa_key(project) :-
+    run("mkdir /root/.ssh/"),
+    run("touch /root/.ssh/id_rsa"),
+    run("touch /root/.ssh/known_hosts"),
+    run("echo ssh-keyscan github.com >> /root/.ssh/known_hosts").
 
-patch(tool, project) :-
-	from("mechtaev/f1x"),
-	checkout(project, project_dir),
-	config(project, tool, config),
-	run(f"cd ${project_dir} && f1x ${config}").
+pull_tool(project) :-
+    run("mkdir /home/f1x_tool"),
+    run("git clone git@github.com:mechtaev/f1x.git /home/f1x_tool").
+
+build_image(project) :-
+    run("cd /home/f1x_tool"),
+    run("docker build . -t mechtaev/f1x"),
+    run("cd").
+
+copy_file("demo", "/home/f1x_demo") :-
+    copy("./demo", "/home/f1x_demo").
+
+copy_file("demo2", "/home/f1x_demo2") :-
+    copy("./demo2", "/home/f1x_demo2").
+
+
+
+patch2(tool, project) :-
+    from("ubuntu:16.04"),
+    add_rsa_key(project),
+    pull_tool(project),
+    build_image(project),
+    
+    copy_file(project, project_dir),
+    config(project, tool, config),
+
+    run(f"cd ${project_dir} && f1x ${config}").
+
