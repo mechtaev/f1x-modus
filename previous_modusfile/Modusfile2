@@ -1,0 +1,54 @@
+project("demo").
+project("demo2").
+tool("f1x").
+
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+config("demo2", "f1x", "-f sort.c -d test.sh -t long -T 100").
+
+
+
+add_git(project) :-
+    run("apt-get update && apt-get install -y git").
+
+add_docker(project) :-
+    # set up repository
+    run("apt-get install -y ca-certificates curl gnupg lsb-release"),
+    run("mkdir -p /etc/apt/keyrings"),
+    run("curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg"),
+    run("echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list > /dev/null"),
+
+    # install docker engine
+    run("apt-get install docker-ce").
+
+pull_tool(project) :-
+    run("mkdir /home/f1x_tool"),
+    run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+
+build_image(project) :-
+    run("cd /home/f1x_tool"),
+    run("docker build . -t mechtaev/f1x"),
+    run("cd").
+
+copy_file("demo", "/home/f1x_demo") :-
+    copy("./demo", "/home/f1x_demo").
+
+copy_file("demo2", "/home/f1x_demo2") :-
+    copy("./demo2", "/home/f1x_demo2").
+
+build_f1x(tool) :-
+    run("mkdir ./home/f1x_tool/f1x/build"),
+    run("cd build"),
+    run("cmake -DF1X_LLVM=/home/f1x_tool/f1x/infra/download_build_install_llvm.sh"),
+    run("make").
+
+patch2(tool, project) :-
+    from("mechtaev/ubuntu-16.04-llvm-3.8.1"),
+    add_git(project),
+
+    pull_tool(project),
+    build_f1x(tool),
+    copy_file(project, project_dir),
+    config(project, tool, config),
+
+    run(f"cd ${project_dir} && f1x ${config}").
+

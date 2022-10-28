@@ -5,20 +5,25 @@ tool("f1x").
 config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
 config("demo2", "f1x", "-f sort.c -d test.sh -t long -T 100").
 
-add_rsa_key(project) :-
-    run("mkdir /root/.ssh/"),
-    run("touch /root/.ssh/id_rsa"),
-    run("touch /root/.ssh/known_hosts"),
-    run("echo ssh-keyscan github.com >> /root/.ssh/known_hosts").
+
+
+add_git(project) :-
+    run("apt-get update && apt-get install -y git").
+
 
 pull_tool(project) :-
     run("mkdir /home/f1x_tool"),
-    run("git clone git@github.com:mechtaev/f1x.git /home/f1x_tool").
+    run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
 
-build_image(project) :-
-    run("cd /home/f1x_tool"),
-    run("docker build . -t mechtaev/f1x"),
-    run("cd").
+build_tool(tool) :-
+    run("cd /home/f1x_tool/f1x"),
+    run("mkdir build"),
+    run("cd build"),
+    run("cmake -DF1X_LLVM=/home/f1x_tool/f1x/infra/download_build_install_llvm.sh"),
+    run("make").
+
+reset_dir(project) :-
+    run("cd /").
 
 copy_file("demo", "/home/f1x_demo") :-
     copy("./demo", "/home/f1x_demo").
@@ -29,11 +34,12 @@ copy_file("demo2", "/home/f1x_demo2") :-
 
 
 patch2(tool, project) :-
-    from("ubuntu:16.04"),
-    add_rsa_key(project),
+    from("ubuntu"),
+
+    add_git(project),
     pull_tool(project),
-    build_image(project),
-    
+    build_tool(tool),
+    reset_dir(project),
     copy_file(project, project_dir),
     config(project, tool, config),
 
