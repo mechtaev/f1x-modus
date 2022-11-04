@@ -1,43 +1,44 @@
-base_image("ubuntu") :- from("mechtaev/ubuntu-16.04-llvm-3.8.1").
-
-layer_image("docker") :- from("docker").
-
-layerrr_image("f1x") :- from("mechtaev/f1x").
-
-config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
-config("demo2", "f1x", "-f sort.c -d test.sh -t long -T 100").
-
-
-
-add_git :-
+base_image :-
+  from("mechtaev/ubuntu-16.04-llvm-3.8.1"),
   run("apt-get update && apt-get install -y git").
 
-pull_tool :-
-    run("mkdir /home/f1x_tool"),
-    run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+clone_tool("f1x") :-
+  run("mkdir /home/f1x_tool"),
+  run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
 
+set_base("f1x") :-
+  base_image,
+  clone_tool(tool).
+  
+download_package("f1x") :-
+  run("apt-get install -y build-essential gcovr zlib1g-dev libtinfo-dev"),
+  run("apt-get install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev"),
+  run("wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+  run("tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz").
+
+compile_tool("f1x") :-
+  run("mkdir /home/f1x_tool/build"),
+  (
+    run("cmake -DF1X_LLVM=/llvm-3.8.1 .."),
+    run("make")
+  )::in_workdir("/home/f1x_tool/build").
+  
+install_tool("f1x") :-
+  run("export PATH=/home/f1x_tool/build/tools:$PATH").
 
 copy_file("demo", "/home/f1x_demo") :-
   copy("./demo", "/home/f1x_demo").
 
-build_tool(tool) :-
-  run("docker build /home/f1x_tool -t mechtaev/f1x").
-
-patch(base, "prod", project, tool) :-
-  base_image("ubuntu"),
-  add_git,
-  pull_tool,
-  patch(base, "dev", project, tool)::copy("/home", "/home").
-
-patch(base, "dev", project, tool) :-
-  layer_image(base),
-  build_tool(tool),
-  # copy("/home", "/home"),
-  patch("f1x", "devv", project, tool)::copy("/home", "/home").
-
-patch(base, "devv", "demo", tool) :-
-  layerrr_image("f1x"),
-  copy_file(project, project_dir),
-  config(project, tool, config),
-  run(f"cd ${project_dir} && f1x ${config}").
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
   
+patch(tool, target) :-
+(
+  set_base(tool),
+  download_package(tool),
+  compile_tool(tool),
+  install_tool(tool)
+)::append_path("/home/f1x_tool/build/tools:"),
+  copy_file(target, target_dir),
+  config(target, tool, config),
+
+  run(f"cd ${target_dir} && f1x ${config}").

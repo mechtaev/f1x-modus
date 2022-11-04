@@ -1,0 +1,22 @@
+base_image :-
+  from("mechtaev/ubuntu-16.04-llvm-3.8.1"),
+  run("apt-get update && apt-get install -y git").
+
+clone_tool("f1x") :-
+  run("mkdir /home/f1x_tool"),
+  run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+
+set_base("f1x") :-
+  base_image,
+  clone_tool(tool).
+  
+  
+
+patch(tool, target) :-
+  from("docker"),
+  set_base(tool) :: copy("/home", "/home"),
+  run("cd /home/f1x_tool"),
+  run("cat Dockerfile"),
+  run("docker build /home/f1x_tool -t mechtaev/f1x"),
+  run("f1x").
+  
