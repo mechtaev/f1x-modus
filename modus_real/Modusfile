@@ -1,0 +1,247 @@
+base_image :-
+  from("ubuntu"),
+  run("apt-get update && apt-get install -y git"),
+  run("apt-get install -y wget").
+
+clone_tool("f1x") :-
+  run("mkdir /home/f1x_tool"),
+  run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+  
+set_base("f1x") :-
+  base_image,
+  clone_tool(tool).
+  
+download_package("f1x") :-
+  run("apt-get install -y build-essential gcovr zlib1g-dev libtinfo-dev"),
+  run("apt-get install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev"),
+  run("wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+  run("tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz").
+
+compile_tool("f1x") :-
+  run("mkdir /home/f1x_tool/build"),
+  (
+    run("cmake -DF1X_LLVM=/llvm-3.8.1 .."),
+    run("make")
+  )::in_workdir("/home/f1x_tool/build").
+  
+install_tool("f1x") :-
+  run("export PATH=/home/f1x_tool/build/tools:$PATH").
+
+copy_file("demo", "/home/f1x_demo") :-
+  copy("./demo", "/home/f1x_demo").
+
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+
+
+# download Kali versions of GenProg ICSE'12 subjects
+fetch :-
+  run("/bin/bash -c set -o pipefail"),
+  run("DOWNLOAD=\"wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --tries=5 --continue\""),
+  run("require () {\t
+hash \"$1\" 2>/dev/null || { echo \"command $1 is not found\"; exit 1; }\t
+}"),
+  run("usage=\"Usage: ./fetch SUBJECT VERSION\""),
+  run("/bin/bash -c if [[ $# > 0 ]]; then
+    subject=\"$1\"
+    shift
+else
+    echo \"$usage\"
+    exit 1
+fi"),
+  run("/bin/bash -c if [[ $# > 0 ]]; then
+    version=\"$1\"
+    shift
+else
+    echo \"$usage\"
+    exit 1
+fi"),
+  run("ROOT=$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )"),
+  run("SCENARIO_URL=\"http://rhino.csail.mit.edu/spr-rep/scenarios/\""),
+  run("directory=\"${subject}-${version}\""),
+  run("full_path=\"$PWD/$directory\""),
+  run("archive=`$ROOT/query prophet-package $subject $version`"),
+  # if statement
+  run("if ! [[ -d \"$directory\" ]]; then"),
+  run("mkdir -p cache"),
+  run("if ! [[ -e \"cache/$archive\" ]]; then"),
+  run("$DOWNLOAD \"$SCENARIO_URL/$archive\" --directory-prefix=cache"),
+  run("fi"),
+  run("mkdir -p \"$directory\""),
+  run("tar xf \"cache/$archive\" --directory \"$directory\" --strip-components=1"),
+  run("mv $directory/*-workdir $directory/workdir"),
+  run("mv $directory/*.conf $directory/prophet.conf"),
+  run("mv $directory/*.revlog $directory/prophet.revlog"),
+  run("sed -i \"s|revision_file.*$|revision_file=$full_path/prophet.revlog|g\" $directory/prophet.conf"),
+  run("sed -i \"s|src_dir.*$|src_dir=$full_path/${subject}-src|g\" $directory/prophet.conf"),
+  run("if [[ \"$subject\" == \"python\" && \"$version\" == \"69223-69224\" ]]; then\n
+        sed -i \"s|Modules/selectmodule.c|Objects/setobject.c|g\" $directory/prophet.conf\n
+    fi"),
+  run("if [[ \"$subject\" == \"lighttpd\" ]]; then\n
+        test_dir=\"$ROOT/prophet/benchmarks/lighttpd-tests\"'n
+    elif [[ \"$subject\" == \"php\" ]]; then\n
+        test_dir=\"$ROOT/prophet/benchmarks/php-test\"\n
+    elif [[ \"$subject\" == \"libtiff\" ]]; then\n
+        test_dir=\"$full_path/libtiff-test\"\n
+    else \n
+        test_dir=\"$ROOT/prophet/benchmarks/${subject}-tests\"\n
+    fi"),
+  run("sed -i \"s|test_dir.*$|test_dir=$test_dir|g\" $directory/prophet.conf"),
+  run("sed -i \"s|/home/ubuntu/Workspace/prophet/build/benchmarks|$ROOT/prophet/benchmarks|g\" $directory/prophet.conf"),
+  run("sed -i \"s|/home/ubuntu/Workspace/prophet/build/../tools|$ROOT/prophet/tools|g\" $directory/prophet.conf"),
+  run("if [[ \"$subject\" == \"gzip\" && \"$version\" == \"3eb6091d69-884ef6d16c\" ]]; then\n
+        sed -i 's/incorrect/invalid/' $directory/workdir/src/gzip.c\n
+    fi"),
+  run("if [[ \"$subject\" == \"php\" ]]; then\n
+        ('n
+            cd $directory/workdir/src/\n
+            make distclean || true\n
+        )\n
+    fi"),
+  run("if [[ \"$subject\" == \"libtiff\" ]]; then\n
+        sed -i 's|$(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)|$(SHELL) -c echo|' $directory/libtiff-test/Makefile\n
+    fi"),
+  # non-unicode character
+  run("if [[ \"$subject\" == \"wireshark\" ]]; then
+        sed -i '/peter.kovar/d' $directory/workdir/src/doc/AUTHORS-SHORT-FORMAT 
+    fi"),
+  run("if [[ \"$subject\" == \"gmp\" ]]; then"),
+  run("(\n
+            cd $directory/workdir/src/mytests\n
+            make distclean || true\n
+        )"),
+  run("(
+            cd $directory/workdir/src/
+            make distclean || true
+        )"),
+  run("sed -i 's/tests/mytests/' $directory/workdir/src/Makefile.am"),
+  run("sed -i 's|tests/Makefile|mytests/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|tests/devel/Makefile|mytests/devel/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/devel/Makefile.am"),
+  run("sed -i 's|tests/mpn/Makefile|mytests/mpn/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/mpn/Makefile.am"),
+  run("sed -i 's|tests/mpf/Makefile|mytests/mpf/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/mpf/Makefile.am"),
+  run("sed -i 's|tests/mpq/Makefile|mytests/mpq/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/mpq/Makefile.am"),
+  run("sed -i 's|tests/mpz/Makefile|mytests/mpz/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/mpz/Makefile.am"),
+  run("sed -i 's|tests/rand/Makefile|mytests/rand/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/rand/Makefile.am"),
+  run("sed -i 's|tests/misc/Makefile|mytests/misc/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/misc/Makefile.am"),
+  run("sed -i 's|tests/cxx/Makefile|mytests/cxx/Makefile|' $directory/workdir/src/configure.in"),
+  run("sed -i 's|$(top_builddir)/tests|$(top_builddir)/mytests|' $directory/workdir/src/mytests/cxx/Makefile.am"),
+  run("fi"),
+  run("fi").
+  
+configure :-
+  run("usage=\"Usage: ./configure SUBJECT VERSION\""),
+  run("/bin/bash -c if [[ $# > 0 ]]; then
+    subject=\"$1\"
+    shift
+else
+    echo \"$usage\"
+    exit 1
+fi"),
+  run("if [[ $# > 0 ]]; then\n
+    version=\"$1\"\n
+    shift\n
+else\n
+    echo \"$usage\"\n
+    exit 1\n
+fi"),
+  run("if [[ $# > 0 ]]; then\n
+    repairTool=\"$1\"\n
+    shift\n
+fi"),
+  run("ROOT=$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )"),
+  run("if [[ $repairTool == \"genprog\" ]]; then\n
+    echo \"genprog\"
+    src_dir=\"${subject}-${version}/workdir/tempsrc\"\n
+else\n
+    src_dir=\"${subject}-${version}/workdir/src\"\n
+fi"),
+  run("deps_dir=\"$ROOT/prophet/benchmarks/${subject}-deps\""),
+  run("$ROOT/prophet/tools/${subject}-build.py -p \"$deps_dir\" -x \"$src_dir\""),
+  run("if [[ \"$subject\" == \"libtiff\" ]]; then\n
+    cp -r \"${subject}-${version}/libtiff-test\" \"${subject}-${version}/workdir/src/my-test\"
+fi ").
+
+repairf1x :-
+  run("require () { hash \"$1\" 2>/dev/null || { echo \"command $1 is not found\"; exit 1; } }"),
+  run("require f1x"),
+  run("usage=\"Usage: ./repair SUBJECT VERSION\""),
+  run("if [[ $# > 0 ]]; then\n
+    subject=\"$1\"\n
+    shift\n
+else\n
+    echo \"$usage\"\n
+    exit 1\n
+fi"),
+  run("if [[ $# > 0 ]]; then\n
+    version=\"$1\"\n
+    shift\n
+else\n
+    echo \"$usage\"\n
+    exit 1\n
+fi"),
+  run("ROOT=$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )"),
+  run("source_dir=\"${subject}-${version}/workdir/src\""),
+  run("negative_tests=`$ROOT/query negative-reproducible $subject $version`"),
+  run("positive_tests=`$ROOT/query positive-reproducible $subject $version`"),
+  run("driver=\"$ROOT/driver\""),
+  run("buggy_file=`$ROOT/query buggy-file $subject $version`"),
+  run("output_patch=\"${subject}-${version}.patch\""),
+  run("if [[ \"$subject\" == \"libtiff\" ]]; then\n
+    build_cmd=\n
+else\n
+    build_cmd=\"make -e\"\n
+fi"),
+  run("case $subject in\n
+    libtiff)\n
+        timeout=1000\n
+        ;;\n
+    wireshark)\n
+        timeout=2000\n
+        ;;\n
+    gmp)\n
+        timeout=20000\n
+        ;;\n
+    php)\n
+        timeout=10000\n
+        ;;\n
+    python)\n
+        timeout=15000\n
+        ;;\n
+    *)\n
+        timeout=2000\n
+        ;;\n
+esac"),
+  run("export F1X_SUBJECT=\"$subject\""),
+  run("time_file=`mktemp`"),
+  run("cmd=\"f1x $source_dir --files $buggy_file --tests $negative_tests $positive_tests --test-timeout $timeout --driver $driver --output $output_patch\""),
+  run("if [[ \"$subject\" == \"libtiff\" ]]; then\n
+    echo $cmd \"--build \\\"make -e; cd my-test; make -e short_tag; make -e ascii_tag; make -e long_tag; make -e strip_rw\\\"\"\n
+else \n
+    echo $cmd\n
+fi"),
+  run("if [[ \"$subject\" == \"libtiff\" ]]; then\n
+    \\time -f '%e' -o $time_file $cmd --build \"make -e; cd my-test; make -e short_tag; make -e ascii_tag; make -e long_tag; make -e strip_rw\"\n
+else\n
+    \\time -f '%e' -o $time_file $cmd \n
+fi"),
+  run("echo TIME: `cat $time_file`"),
+  run("rm -f $time_file").
+  
+patchreal(tool, target) :-
+  (
+    set_base(tool),
+    download_package(tool),
+    compile_tool(tool),
+    install_tool(tool)
+  )::append_path("/home/f1x_tool/build/tools:"),
+  copy_file(target, target_dir),
+  config(target, tool, config),
+  fetch,
+  configure,
+  repair.
