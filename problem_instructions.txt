@@ -1,0 +1,47 @@
+The only useful folder is the "test" folder.
+
+The problem is that, when setting up the environment by executing "./bootsrtap", it will give an error at the last step, i.e. "make".
+
+The error is shown as the following:
+Connecting to ftp.gnu.org (ftp.gnu.org)|::ffff:209.51.188.20|:21... connected.
+Logging in as anonymous ... Logged in!
+==> SYST ... done.    ==> PWD ... done.
+==> TYPE I ... done.  ==> CWD (1) /gnu/bison ... done.
+==> SIZE bison-2.2.tar.gz ... 1384574
+==> EPSV ... ==> LPSV ...
+Cannot initiate PASV transfer.
+==> EPRT ... ==> LPRT ...
+Error in server response, closing control connection.
+Retrying.
+
+
+To reproduce the problem, please do the following steps:
+cd test
+/bin/bash containerCreator.sh 1
+docker start -ai testenv_1
+./bootstrap
+# Note that it usually takes 10-20min
+
+
+The followings are the explainations of some files in "test" folder:
+
+containerCreator.sh:
+it will create a docker image using Modusfile named as "patch1:f1x-demo",
+and then create a docker container using this image, the name of this container is "testenv_1"
+To run it, please run "/bin/bash containerCreator.sh 1"
+
+delContainer.sh:
+it will delete the docker container and the image that are created above.
+To run it, pleaser run "/bin/bash delContainer.sh 1"
+
+Modusfile:
+The pseudocode is like:
+  from ubuntu:14.04
+  apt install -y git wget
+  copy ./f1x-genprog-icse12 to /
+  
+Modusfile_backup:
+The old version of Modusfile.
+
+
+
