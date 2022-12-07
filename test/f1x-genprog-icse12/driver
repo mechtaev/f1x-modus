@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+# Universal driver
+# Takes subject name from F1X_SUBJECT environment variable
+#set -x
+test="$1"
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [[ "$F1X_SUBJECT" == "lighttpd" ]]; then
+    killall lighttpd || true # otherwise networking may fail
+    test_dir=$ROOT/prophet/benchmarks/lighttpd-tests
+elif [[ "$F1X_SUBJECT" == "libtiff" ]]; then
+    test_dir=$PWD/../../libtiff-test
+elif [[ "$F1X_SUBJECT" == "php" ]]; then
+    test_dir=$ROOT/prophet/benchmarks/php-test
+else 
+    test_dir=$ROOT/prophet/benchmarks/${F1X_SUBJECT}-tests
+fi
+
+work_dir=`mktemp -d`
+echo work dir: $work_dir
+
+output=`$ROOT/prophet/tools/${F1X_SUBJECT}-test.py $PWD $test_dir $work_dir $test`
+
+rm -rf $work_dir
+
+if [[ "$output" == "$test" ]]; then
+    exit 0
+else 
+    exit 1
+fi

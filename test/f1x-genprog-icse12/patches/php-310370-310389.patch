@@ -1,0 +1,6 @@
+--- a/Zend/zend_closures.c
++++ b/Zend/zend_closures.c
+223c223
+< 		destroy_op_array(&closure->func.op_array TSRMLS_CC);
+---
+> 		if (0) destroy_op_array(&closure->func.op_array);

@@ -1,0 +1,6 @@
+--- a/inflate.c
++++ b/inflate.c
+347c347
+<     return 0;
+---
+>     return hufts;

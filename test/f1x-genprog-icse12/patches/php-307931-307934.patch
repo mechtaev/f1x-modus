@@ -1,0 +1,6 @@
+--- a/main/streams/userspace.c
++++ b/main/streams/userspace.c
+911c911
+< 	if (call_result == SUCCESS && retval != NULL && Z_TYPE_P(retval) == IS_ARRAY) {
+---
+> 	if (((call_result != 0) && (retval != (void *)0)) && Z_TYPE_P(retval) == IS_ARRAY) {

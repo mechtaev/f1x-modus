@@ -1,0 +1,8 @@
+--- a/dumpcap.c
++++ b/dumpcap.c
+3805,3807c3805
+<     g_log_set_handler(LOG_DOMAIN_CAPTURE_CHILD,
+<                       log_flags,
+<                       console_log_handler, NULL /* user_data */);
+---
+>     if (0) g_log_set_handler("CaptureChild", log_flags, console_log_handler, ((void *)0));

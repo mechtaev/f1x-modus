@@ -1,0 +1,6 @@
+--- a/src/configparser.c
++++ b/src/configparser.c
+1234c1234
+<     if (COMP_UNSET == dc->comp) {
+---
+>     if ((COMP_UNSET > dc->comp)) {

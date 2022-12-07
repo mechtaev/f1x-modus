@@ -1,0 +1,6 @@
+--- a/Python/peephole.c
++++ b/Python/peephole.c
+671c671
+<                     continue;
+---
+>                     { if ((codestr[i + 2] != 15)) continue; }

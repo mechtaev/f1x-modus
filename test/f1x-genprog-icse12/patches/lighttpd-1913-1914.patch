@@ -1,0 +1,6 @@
+--- a/src/mod_cgi.c
++++ b/src/mod_cgi.c
+258c258
+< 		if (c->mem->used == 0) continue;
+---
+> 		if ((c->mem->used == 50)) continue;

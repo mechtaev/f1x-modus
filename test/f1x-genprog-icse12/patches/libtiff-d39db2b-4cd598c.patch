@@ -1,0 +1,6 @@
+--- a/tools/tiffinfo.c
++++ b/tools/tiffinfo.c
+63c63
+< 	status = 1;
+---
+> 	status = 0;

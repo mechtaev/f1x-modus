@@ -1,0 +1,81 @@
+# create basic image and install git
+base_image :-
+  from("ubuntu:14.04"),
+  run("apt-get update && apt-get install -y git").
+
+# install wget
+install_wget :-
+  run("apt-get install -y wget").
+
+# install python 
+install_python :-
+  run("apt-get install -y python3").
+  
+# install ca-certificates to avoid insecure connection
+install_ca :-
+  run("apt-get install -y ca-certificates").
+
+# install CMake
+install_cmake :-
+  run("apt-get install -y cmake").
+  
+# install f1x
+clone_tool("f1x") :-
+  run("mkdir /home/f1x_tool"),
+  run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
+
+
+
+
+set_base("f1x") :-
+  base_image,
+  install_wget,
+  install_python,
+  install_ca,
+  install_cmake,
+  clone_tool(tool).
+
+
+
+  
+download_package("f1x") :-
+  run("apt-get install -y build-essential gcovr zlib1g-dev libtinfo-dev"),
+  run("apt-get install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev"),
+  run("wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+  run("tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz").
+
+compile_tool("f1x") :-
+  run("mkdir /home/f1x_tool/build"),
+  (
+    run("cmake -DF1X_LLVM=/llvm-3.8.1 .."),
+    run("make")
+  )::in_workdir("/home/f1x_tool/build").
+  
+install_tool("f1x") :-
+  run("export PATH=/home/f1x_tool/build/tools:$PATH").
+
+
+# copy files from host
+copy_file("demo", "/home/f1x_demo") :-
+  copy("./demo", "/home/f1x_demo").
+  
+copy_patchprocess :-
+  copy("./f1x-genprog-icse12", "/home/f1x-genprog-icse12").
+
+
+
+config("demo", "f1x", "-f sort.c -d test.sh -t long -T 100").
+  
+patch1(tool, target) :-
+  (
+    set_base(tool),
+    download_package(tool),
+    compile_tool(tool),
+    install_tool(tool)
+  )::append_path("/home/f1x_tool/build/tools:"),
+  copy_file(target, target_dir),
+  copy_patchprocess,
+  config(target, tool, config),
+  
+  # run(f"cd ${target_dir} && f1x ${config}").
+  run(f"f1x ${config}") :: in_workdir("/home/f1x_demo").

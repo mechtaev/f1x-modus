@@ -1,0 +1,6 @@
+--- a/src/configfile-glue.c
++++ b/src/configfile-glue.c
+521c521
+< 		con->conditional_is_valid[i] = 0;
+---
+> 		con->conditional_is_valid[i] = 1;

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+usage="Usage: ./configure SUBJECT VERSION"
+
+if [[ $# > 0 ]]; then
+    subject="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+if [[ $# > 0 ]]; then
+    version="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+if [[ $# > 0 ]]; then
+    repairTool="$1"
+    shift
+fi
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [[ $repairTool == "genprog" ]]; then
+    echo "genprog"
+    src_dir="${subject}-${version}/workdir/tempsrc"
+else
+    src_dir="${subject}-${version}/workdir/src"
+fi
+
+deps_dir="$ROOT/prophet/benchmarks/${subject}-deps"
+
+$ROOT/prophet/tools/${subject}-build.py -p "$deps_dir" -x "$src_dir"
+
+if [[ "$subject" == "libtiff" ]]; then
+    cp -r "${subject}-${version}/libtiff-test" "${subject}-${version}/workdir/src/my-test"
+fi 

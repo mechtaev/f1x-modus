@@ -1,0 +1,6 @@
+--- a/Zend/zend_variables.c
++++ b/Zend/zend_variables.c
+219c219
+< 				Z_SET_REFCOUNT_P(tmp, 0);
+---
+> 				if (0) zval_set_refcount_p(tmp, 0);

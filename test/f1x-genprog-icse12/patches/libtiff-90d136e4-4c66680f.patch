@@ -1,0 +1,6 @@
+--- a/tools/tiff2pdf.c
++++ b/tools/tiff2pdf.c
+769c769
+< 	ret = EXIT_FAILURE;
+---
+> 	ret = ret;

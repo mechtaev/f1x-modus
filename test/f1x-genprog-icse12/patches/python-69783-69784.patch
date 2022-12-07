@@ -1,0 +1,6 @@
+--- a/Modules/timemodule.c
++++ b/Modules/timemodule.c
+332c332
+<     if (y < 1000) {
+---
+>     if ((y == 1000)) {

@@ -1,0 +1,84 @@
+#!/bin/bash
+
+require () {
+    hash "$1" 2>/dev/null || { echo "command $1 is not found"; exit 1; }
+}
+
+require f1x
+
+usage="Usage: ./repair SUBJECT VERSION"
+
+if [[ $# > 0 ]]; then
+    subject="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+if [[ $# > 0 ]]; then
+    version="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+source_dir="${subject}-${version}/workdir/src"
+negative_tests=`$ROOT/query negative-reproducible $subject $version`
+positive_tests=`$ROOT/query positive-reproducible $subject $version`
+driver="$ROOT/driver"
+buggy_file=`$ROOT/query buggy-file $subject $version`
+output_patch="${subject}-${version}.patch"
+
+if [[ "$subject" == "libtiff" ]]; then
+    build_cmd=
+else
+    build_cmd="make -e"
+fi
+
+case $subject in
+    libtiff)
+        timeout=1000
+        ;;
+    wireshark)
+        timeout=2000
+        ;;
+    gmp)
+        timeout=20000
+        ;;
+    php)
+        timeout=10000
+        ;;
+    python)
+        timeout=15000
+        ;;
+    *)
+        timeout=2000
+        ;;
+esac
+
+export F1X_SUBJECT="$subject"
+
+time_file=`mktemp`
+
+cmd="f1x $source_dir --files $buggy_file --tests $negative_tests $positive_tests --test-timeout $timeout --driver $driver --output $output_patch"
+
+if [[ "$subject" == "libtiff" ]]; then
+    echo $cmd "--build \"make -e; cd my-test; make -e short_tag; make -e ascii_tag; make -e long_tag; make -e strip_rw\""
+else 
+    echo $cmd
+fi
+
+if [[ "$subject" == "libtiff" ]]; then
+    \time -f '%e' -o $time_file $cmd --build "make -e; cd my-test; make -e short_tag; make -e ascii_tag; make -e long_tag; make -e strip_rw"
+else
+    \time -f '%e' -o $time_file $cmd
+fi
+
+
+echo TIME: `cat $time_file`
+
+rm -f $time_file

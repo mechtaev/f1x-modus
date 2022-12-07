@@ -1,0 +1,6 @@
+--- a/Objects/setobject.c
++++ b/Objects/setobject.c
+547c547
+<     if (i > mask)
+---
+>     if ((i != mask))

@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+#
+# Usage: query versions SUBJECT
+#        query positive-tests SUBJECT VERSION
+#        query negative-tests SUBJECT VERSION
+#        query prophet-package SUBJECT VERSION
+#        query buggy-file SUBJECT VERSION
+
+import os
+import shutil
+import json
+import sys
+import csv
+from os.path import join
+from subprocess import call, STDOUT, DEVNULL
+
+
+class cd:
+    """Context manager for changing the current working directory"""
+
+    def __init__(self, new_path):
+        self.new_path = os.path.expanduser(new_path)
+
+    def __enter__(self):
+        self.saved_path = os.getcwd()
+        os.chdir(self.new_path)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.saved_path)
+
+
+root = os.path.dirname(os.path.realpath(__file__))
+
+output_file = join(root, 'output.json')
+benchmark_file = os.path.join(root, 'benchmark.json')    
+
+data = {}
+
+#subjects = ['libtiff', 'lighttpd', 'php', 'gmp', 'gzip', 'python', 'wireshark', 'fbc']
+subjects = ['python']
+
+
+def run_test(subject, version, test):
+    with cd(join(subject + '-' + version, 'workdir', 'src')):
+        result = call('F1X_SUBJECT=' + subject + ' ../../../driver ' + str(test), shell=True, stdout=DEVNULL, stderr=STDOUT)
+    return result
+
+for subject in subjects:
+    data[subject] = {}
+    with open(benchmark_file) as file:
+        benchmark = json.load(file)
+    for version in benchmark[subject]:
+        if subject == 'php' and version == '309716-309729': # this version crashes my system
+            continue
+        print(subject + ' ' + version)
+        data[subject][version] = {}
+        data[subject][version]['positive'] = []
+        data[subject][version]['negative'] = []
+        data[subject][version]['nr-positive'] = []
+        data[subject][version]['nr-negative'] = []
+        print('fetching...')
+        failed = call('./fetch ' + subject + ' ' + version, shell=True, stdout=DEVNULL, stderr=STDOUT)
+        if failed:
+            print('failed')
+            data[subject][version]['nr-positive'] = 'all'
+            data[subject][version]['nr-negative'] = 'all'
+            continue
+        print('configuring...')
+        failed = call('./configure ' + subject + ' ' + version, shell=True, stdout=DEVNULL, stderr=STDOUT)
+        if failed:
+            print('failed')
+            data[subject][version]['nr-positive'] = 'all'
+            data[subject][version]['nr-negative'] = 'all'
+            continue
+
+        print('compiling...')
+        with cd(join(subject + '-' + version, 'workdir', 'src')):
+            failed = call('make', shell=True, stdout=DEVNULL, stderr=STDOUT)
+            if failed:
+                print('failed')
+                data[subject][version]['nr-positive'] = 'all'
+                data[subject][version]['nr-negative'] = 'all'
+                continue
+    
+        revlog_file = join(subject + '-' + version, 'prophet.revlog')
+        lines = [line.strip() for line in open(revlog_file)]
+
+        print('testing...')
+        negative_str = ""
+
+        # TODO: this should be obtained using query script:
+        print_and_exit = False
+        for line in lines:
+            if print_and_exit:
+                negative_str = line
+                break
+            if line.startswith('Diff Cases'):
+                print_and_exit = True
+        negative = [int(test) for test in negative_str.split()]
+
+        for test in negative:
+            result = run_test(subject, version, test)
+            if result == 0:
+                print('negative test ' + str(test) + ' is not reproducible')
+                data[subject][version]['nr-negative'].append(test)
+            else:
+                data[subject][version]['negative'].append(test)
+
+        positive_str = ""
+        print_and_exit = False
+        for line in lines:
+            if print_and_exit:
+                positive_str = line
+                break
+            if line.startswith('Positive Cases'):
+                print_and_exit = True
+        positive = [int(test) for test in positive_str.split()]
+
+        for test in positive:
+            result = run_test(subject, version, test)
+            if result == 0:
+                data[subject][version]['positive'].append(test)
+            else:
+                print('positive test ' + str(test) + ' is not reproducible')
+                data[subject][version]['nr-positive'].append(test)
+
+        shutil.rmtree(subject + '-' + version)
+
+        with open(output_file, 'w') as outfile:
+            json.dump(data, outfile)

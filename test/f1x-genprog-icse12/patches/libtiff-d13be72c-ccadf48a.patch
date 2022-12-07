@@ -1,0 +1,7 @@
+--- a/libtiff/tif_dirread.c
++++ b/libtiff/tif_dirread.c
+589,590c589
+< 	} else if (td->td_nstrips > 1
+< 		   && td->td_compression == COMPRESSION_NONE
+---
+> 	} else if (((td->td_nstrips == 1) && (td->td_compression == 1))

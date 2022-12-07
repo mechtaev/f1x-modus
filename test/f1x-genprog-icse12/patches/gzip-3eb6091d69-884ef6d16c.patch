@@ -1,0 +1,6 @@
+--- a/gzip.c
++++ b/gzip.c
+546c546
+<     if ((z_len == 0 && !decompress) || z_len > MAX_SUFFIX) {
+---
+>     if ((((z_len <= 0) && ! (decompress == 0)) || (z_len > 30))) {

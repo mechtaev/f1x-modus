@@ -1,0 +1,6 @@
+--- a/epan/reassemble.c
++++ b/epan/reassemble.c
+294c294
+< 	for (fd_head = value; fd_head != NULL; fd_head = tmp_fd) {
+---
+> 	for (fd_head = value; (fd_head == (void *)0); fd_head = tmp_fd) {

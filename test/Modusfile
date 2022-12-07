@@ -1,0 +1,24 @@
+# create basic image and install git
+base_image :-
+  from("ubuntu:14.04"),
+  run("apt-get update && apt-get install -y git").
+
+# install wget
+install_wget :-
+  run("apt-get install -y wget").
+ 
+from_wget :- 
+  from("cvisionai/wget").
+  
+
+copy_patchprocess :-
+  copy("./f1x-genprog-icse12", "/").
+
+
+  
+patch1(tool, target) :-
+  base_image,
+  install_wget,
+  copy_patchprocess.
+
+

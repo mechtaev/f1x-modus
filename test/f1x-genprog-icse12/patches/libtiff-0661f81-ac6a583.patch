@@ -1,0 +1,7 @@
+--- a/libtiff/tif_dirwrite.c
++++ b/libtiff/tif_dirwrite.c
+346,347c346
+< 		if (tif->tif_rawcc > 0 && tif->tif_rawcc != orig_rawcc
+< 		    && (tif->tif_flags & TIFF_BEENWRITING) != 0
+---
+> 		if ((((tif->tif_rawcc > 0) && (tif->tif_rawcc != orig_rawcc)) || ( ( tif->tif_flags &  64) != 0))

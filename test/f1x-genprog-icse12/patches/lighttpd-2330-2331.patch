@@ -1,0 +1,6 @@
+--- a/src/mod_compress.c
++++ b/src/mod_compress.c
+91c91
+< 			if (!s) continue;
+---
+> 			if (s) continue;

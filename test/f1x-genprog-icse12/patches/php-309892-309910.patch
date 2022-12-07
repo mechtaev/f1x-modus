@@ -1,0 +1,6 @@
+--- a/ext/standard/string.c
++++ b/ext/standard/string.c
+5255c5255
+< 	if (len > s1_len - offset) {
+---
+> 	if ((len == (s1_len - offset))) {

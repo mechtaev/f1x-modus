@@ -1,0 +1,6 @@
+--- a/tools/tiffcrop.c
++++ b/tools/tiffcrop.c
+4969c4969
+<   TIFFGetFieldDefaulted(in, TIFFTAG_RESOLUTIONUNIT, &res_unit);
+---
+>   if (0) TIFFGetFieldDefaulted(in, 296, &res_unit);

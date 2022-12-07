@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+#
+# Usage: query versions SUBJECT
+#        query positive-tests SUBJECT VERSION
+#        query negative-tests SUBJECT VERSION
+#        query prophet-package SUBJECT VERSION
+#        query buggy-file SUBJECT VERSION
+
+import os
+import shutil
+import json
+import sys
+import csv
+import time
+from os.path import join
+from subprocess import call, STDOUT, DEVNULL
+
+
+class cd:
+    """Context manager for changing the current working directory"""
+
+    def __init__(self, new_path):
+        self.new_path = os.path.expanduser(new_path)
+
+    def __enter__(self):
+        self.saved_path = os.getcwd()
+        os.chdir(self.new_path)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.saved_path)
+
+
+root = os.path.dirname(os.path.realpath(__file__))
+
+output_file = join(root, 'output.json')
+benchmark_file = os.path.join(root, 'repaired.json')    
+
+data = {}
+
+subjects = ['libtiff', 'lighttpd', 'php', 'gmp', 'gzip', 'python', 'wireshark']
+
+
+def run_test(subject, version, test):
+    with cd(join(subject + '-' + version, 'workdir', 'src')):
+        start_time = time.time()
+        result = call('F1X_SUBJECT=' + subject + ' ../../../driver ' + str(test), shell=True, stdout=DEVNULL, stderr=STDOUT)
+        elapsed_time = time.time() - start_time
+
+    return (result, elapsed_time)
+
+for subject in subjects:
+    data[subject] = {}
+    with open(benchmark_file) as file:
+        benchmark = json.load(file)
+    first = True
+    cdir = os.getcwd()
+    print("currdir:"+cdir)
+    for version in benchmark[subject]:
+        if subject == 'php' and version == '309716-309729': # this version crashes my system
+            continue
+        if not first:
+               continue 
+        print(subject + ' ' + version)
+        print('fetching...'+subject+ " "+version)
+        failed = call("./fetch "+ subject +" " + version, shell=True, stdout=DEVNULL, stderr=STDOUT)
+        if failed:
+            print('failed')
+            continue
+        print('configuring...')
+        failed = call('./configure ' + subject + ' ' + version, shell=True, stdout=DEVNULL, stderr=STDOUT)
+        if failed:
+            print('failed')
+            continue
+
+        print('compiling...')
+        with cd(join(subject + '-' + version, 'workdir', 'src')):
+            failed = call('make', shell=True, stdout=DEVNULL, stderr=STDOUT)
+            if failed:
+                print('failed')
+                continue
+    
+        revlog_file = join(subject + '-' + version, 'prophet.revlog')
+        lines = [line.strip() for line in open(revlog_file)]
+
+        print('testing...')
+        negative_str = ""
+
+        # TODO: this should be obtained using query script:
+        print_and_exit = False
+        for line in lines:
+            if print_and_exit:
+                negative_str = line
+                break
+            if line.startswith('Diff Cases'):
+                print_and_exit = True
+        negative = [int(test) for test in negative_str.split()]
+        totaltime = 0
+        numtest = 0
+        for test in negative:
+            (result, duration) = run_test(subject, version, test)
+            if result == 0:
+                print('negative test ' + str(test) + ' is not reproducible')
+                data[subject][version]['nr-negative'].append(test)
+            else:
+                totaltime = totaltime + duration
+                numtest = numtest +1
+
+        positive_str = ""
+        print_and_exit = False
+        for line in lines:
+            if print_and_exit:
+                positive_str = line
+                break
+            if line.startswith('Positive Cases'):
+                print_and_exit = True
+        positive = [int(test) for test in positive_str.split()]
+
+        for test in positive:
+            (result, duration) = run_test(subject, version, test)
+            if result == 0:
+                totaltime = totaltime + duration
+                numtest = numtest +1
+            else:
+                print('positive test ' + str(test) + ' is not reproducible')
+        shutil.rmtree(subject + '-' + version)
+        print("TOTAL TESTS:"+str(numtest))
+        print("TOTAL TIME:"+str(totaltime))
+        avg = totaltime/float(numtest)
+        print("AVERAGE:"+subject+ ":"+str(avg))  
+        with open(output_file, 'w') as outfile:
+            json.dump(data, outfile)
+        if first:
+            first = False
+        

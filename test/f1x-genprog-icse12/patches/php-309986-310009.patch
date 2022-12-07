@@ -1,0 +1,6 @@
+--- a/Zend/zend_object_handlers.c
++++ b/Zend/zend_object_handlers.c
+130c130
+< 		Z_DELREF_P(retval);
+---
+> 		if (0) zval_delref_p(retval);

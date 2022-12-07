@@ -1,0 +1,6 @@
+--- a/tools/tiffcp.c
++++ b/tools/tiffcp.c
+875c875
+< 	return 0;
+---
+> 	return stripsize;

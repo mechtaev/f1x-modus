@@ -1,0 +1,6 @@
+--- a/tools/tiffcrop.c
++++ b/tools/tiffcrop.c
+5358c5358
+<            if (test > image->width - 1)
+---
+>            if ((test == (image->width - 1)))

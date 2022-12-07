@@ -1,0 +1,38 @@
+#!/bin/bash
+
+require () {
+    hash "$1" 2>/dev/null || { echo "command $1 is not found"; exit 1; }
+}
+
+require prophet
+
+usage="Usage: ./repair SUBJECT VERSION"
+
+if [[ $# > 0 ]]; then
+    subject="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+if [[ $# > 0 ]]; then
+    version="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+rm -rf __tmp*
+
+prophet "${subject}-${version}/prophet.conf" $conf_file -init-only &> /dev/null
+
+dir=(__tmp*)
+
+echo "$dir"
+
+cp "${subject}-${version}/workdir/profile_localization.res" $dir/profile_localization.res
+cp "${subject}-${version}/prophet.conf" $dir/repair.conf

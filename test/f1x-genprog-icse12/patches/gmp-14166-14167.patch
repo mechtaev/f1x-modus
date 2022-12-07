@@ -1,0 +1,6 @@
+--- a/mpz/gcdext.c
++++ b/mpz/gcdext.c
+64c64
+<   if (asize < bsize || (asize == bsize && _gmpn_cmp (ap, bp, asize) < 0))
+---
+>   if ((asize <= bsize) || (asize == bsize && _gmpn_cmp (ap, bp, asize) < 0))

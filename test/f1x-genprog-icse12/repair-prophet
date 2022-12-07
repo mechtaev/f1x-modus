@@ -1,0 +1,48 @@
+#!/bin/bash
+
+require () {
+    hash "$1" 2>/dev/null || { echo "command $1 is not found"; exit 1; }
+}
+
+require prophet
+
+usage="Usage: ./repair SUBJECT VERSION"
+
+if [[ $# > 0 ]]; then
+    subject="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+if [[ $# > 0 ]]; then
+    version="$1"
+    shift
+else
+    echo "$usage"
+    exit 1
+fi
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+rm -rf __tmp*
+
+echo "working on ${subject}-${version}"
+
+prophet "${subject}-${version}/prophet.conf" $conf_file -init-only &> /dev/null
+
+dir=(__tmp*)
+
+echo "$dir"
+
+cp "${subject}-${version}/workdir/profile_localization.res" $dir/profile_localization.res
+cp "${subject}-${version}/prophet.conf" $dir/repair.conf
+
+echo "init finished!"
+
+time_out=4h
+
+\time -f '%e' -o $dir/time.log timeout -k 9 $time_out prophet -full-synthesis -full-explore -feature-para=$ROOT/prophet/crawler/para-all.out -r $dir &> $dir/log.txt
+mv $dir ${subject}-${version}-restult
+mv ${subject}-fix* ${subject}-${version}-restult

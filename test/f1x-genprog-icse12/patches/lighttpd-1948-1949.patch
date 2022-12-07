@@ -1,0 +1,6 @@
+--- a/src/response.c
++++ b/src/response.c
+52c52
+< 	} else if (con->response.content_length >= 0) {
+---
+> 	} else if ((con->response.content_length > 0)) {

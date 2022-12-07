@@ -1,0 +1,6 @@
+--- a/libtiff/tif_dirinfo.c
++++ b/libtiff/tif_dirinfo.c
+276c276
+< 	if (tif->tif_fields && tif->tif_nfields > 0) {
+---
+> 	if (((tif->tif_fields == (void*)0) && (tif->tif_nfields > 0))) {

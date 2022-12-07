@@ -1,0 +1,39 @@
+#!/bin/bash
+#set -euo pipefail
+#set -x
+# Universal driver
+# Takes subject name from F1X_SUBJECT environment variable
+
+test="$1"
+
+ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [[ "$F1X_SUBJECT" == "lighttpd" ]]; then
+    test_dir=$ROOT/prophet/benchmarks/lighttpd-tests
+elif [[ "$F1X_SUBJECT" == "php" ]]; then
+    test_dir=$ROOT/prophet/benchmarks/php-test
+else 
+    test_dir=$PWD/../../${F1X_SUBJECT}-test
+fi
+
+pos_test=`$ROOT/query positive-reproducible $F1X_SUBJECT $F1X_VERSION`
+neg_test=`$ROOT/query negative-reproducible $F1X_SUBJECT $F1X_VERSION`
+
+pos_arr=($pos_test)
+neg_arr=($neg_test)
+
+patten=`expr substr "$test" 1 1`
+num=`expr substr "$test" 2 ${#test}`
+
+if [[ $patten == 'n' ]]; then
+    test=${neg_arr[`expr $num - 1`]}
+else
+    test=${pos_arr[`expr $num - 1`]}
+fi
+
+output=`$ROOT/prophet/tools/${F1X_SUBJECT}-test.py $PWD $test_dir DUMMY $test`
+if [[ "$output" == "$test" ]]; then
+    exit 0
+else 
+    exit 1
+fi
