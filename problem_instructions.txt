@@ -17,7 +17,7 @@ Retrying.
 
 To reproduce the problem, please do the following steps:
 cd test
-/bin/bash containerCreator.sh 1
+./containerCreator.sh 1 gen
 docker start -ai testenv_1
 ./bootstrap
 # Note that it usually takes 10-20min
@@ -28,11 +28,11 @@ The followings are the explainations of some files in "test" folder:
 containerCreator.sh:
 it will create a docker image using Modusfile named as "patch1:f1x-demo",
 and then create a docker container using this image, the name of this container is "testenv_1"
-To run it, please run "/bin/bash containerCreator.sh 1"
+To run it, please run "./containerCreator.sh 1 gen"
 
 delContainer.sh:
 it will delete the docker container and the image that are created above.
-To run it, pleaser run "/bin/bash delContainer.sh 1"
+To run it, pleaser run "./delContainer.sh 1 gen"
 
 Modusfile:
 The pseudocode is like:
