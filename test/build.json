@@ -2,9 +2,8 @@
   {
     "predicate": "patch2",
     "args": [
-      "f1x",
-      "demo"
+      "cer"
     ],
-    "digest": "sha256:fabf09f5c2c30c8f5c17d1f544ea2f197dd21d211fdd4e6edc715fd78149dc7a"
+    "digest": "sha256:9a5c321a5484fc12f04a2d79025e5a6fa1faaa4ab8369b096c5cf2f7ddc0eff3"
   }
 ]

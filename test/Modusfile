@@ -1,11 +1,19 @@
 # create basic image and install git
-base_image :-
+base_image("gen") :-
   from("ubuntu:14.04"),
+  run("apt-get update && apt-get install -y git").
+  
+base_image("cer") :-
+  from("ubuntu"),
   run("apt-get update && apt-get install -y git").
 
 # install wget
 install_wget :-
   run("apt-get install -y wget").
+
+# install python and pip
+install_python :-
+  run("apt-get install -y python3 python-pip").
  
 from_wget :- 
   from("cvisionai/wget").
@@ -27,8 +35,9 @@ prepare("cer") :-
   run("").
   
 patch2(target) :-
-  base_image,
+  base_image(target),
   install_wget,
+  install_python,
   copy_patchprocess(target),
   prepare(target).
   
