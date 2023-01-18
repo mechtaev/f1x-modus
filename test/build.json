@@ -1,9 +1,9 @@
 [
   {
-    "predicate": "patch2",
+    "predicate": "patch3",
     "args": [
       "cer"
     ],
-    "digest": "sha256:9a5c321a5484fc12f04a2d79025e5a6fa1faaa4ab8369b096c5cf2f7ddc0eff3"
+    "digest": "sha256:33ab318ac63621a0030ace8f73819245a18bea4f75cacf4dd7b2d92556940335"
   }
 ]
