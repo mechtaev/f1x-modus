@@ -11,14 +11,26 @@ from_wget :-
   from("cvisionai/wget").
   
 
-copy_patchprocess :-
+copy_patchprocess("gen") :-
   copy("./f1x-genprog-icse12", "/").
 
-
+copy_patchprocess("cer") :-
+  copy("./cerberus", "/").
   
-patch1(tool, target) :-
+prepare("gen") :-
+  run("./bootstrap_installDependency.sh"),
+  run("./bootstrap_CMake.sh"),
+  run("./bootstrap_f1x.sh"),
+  run("./bootstrap_prophet.sh").
+
+prepare("cer") :-
+  run("").
+  
+patch2(target) :-
   base_image,
   install_wget,
-  copy_patchprocess.
+  copy_patchprocess(target),
+  prepare(target).
+  
 
 

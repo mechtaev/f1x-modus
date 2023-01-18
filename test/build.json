@@ -1,10 +1,10 @@
 [
   {
-    "predicate": "patch1",
+    "predicate": "patch2",
     "args": [
       "f1x",
       "demo"
     ],
-    "digest": "sha256:fec9e4666d51f4ce65a2bec662bfe6dc496a50e913386cdc9be85c7121ba9171"
+    "digest": "sha256:fabf09f5c2c30c8f5c17d1f544ea2f197dd21d211fdd4e6edc715fd78149dc7a"
   }
 ]

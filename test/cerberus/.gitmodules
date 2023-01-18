@@ -1,0 +1,18 @@
+[submodule "benchmark/vulnloc"]
+	path = benchmark/vulnloc
+	url = git@github.com:nus-apr/vulnloc-benchmark.git
+[submodule "benchmark/manybugs"]
+	path = benchmark/manybugs
+	url = git@github.com:nus-apr/manybugs.git
+[submodule "benchmark/extractfix"]
+	path = benchmark/extractfix
+	url = git@github.com:nus-apr/extractfix-benchmark.git
+[submodule "benchmark/itsp"]
+	path = benchmark/itsp
+	url = git@github.com:nus-apr/itsp-benchmark.git
+[submodule "benchmark/hippodrome"]
+	path = benchmark/hippodrome
+	url = git@github.com:nus-apr/hippodrome-benchmark.git
+[submodule "benchmark/defects4j"]
+	path = benchmark/defects4j
+	url = git@github.com:nus-apr/defects4j.git
