@@ -24,7 +24,7 @@ copy_patchprocess("gen") :-
 
 copy_patchprocess("cer") :-
   run("mkdir cerberus"),
-  copy("./cerberus", "/cerberus").
+  copy("./cerberus", "/").
   
 prepare("gen") :-
   run("./bootstrap_installDependency.sh"),
@@ -35,12 +35,13 @@ prepare("gen") :-
 prepare("cer") :-
   (
     install_python,
-    # run("python3 -m venv cer"),
-    # run(". cer/bin/activate"),
+    run("python3 -m venv cer"),
+    run(". cer/bin/activate"),
     run("pip3 install -r requirements.txt"),
     run("apt-get install build-essential python3-dev"),
     run("pip3 install Cython"),
-    run(". activate")
+
+    run(". ./activate")
     # run("python3 setup.py install")
   )::in_workdir("/cerberus").
   
