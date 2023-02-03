@@ -1,4 +1,0 @@
-https://github.com/mechtaev/f1x-genprog-icse12
-
-[07/11 16:26] Mechtaev, Sergey
-https://program-repair.s3.ap-southeast-1.amazonaws.com/prophet-genprog-icse12/fbc-5252.tar.gz  ​

@@ -1,5 +1,8 @@
+# base image ubuntu 20:04
 base_image :-
   from("ubuntu:20.04").
+
+#-------------------------------------------------------------------------------------------------
 
 # install packages git wget cmake
 install_packages :-
@@ -9,15 +12,26 @@ install_packages :-
   # run("DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y cmake").
   install_cmake.
 
-# install cmake --version 3.5.2
+
+# build essentials (which is also required by f1x)
+install_dependencies :-
+  run("DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y build-essential gcovr zlib1g-dev libtinfo-dev"),
+  run("apt install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev").
+
+
+# install cmake --version 3.5.1
 install_cmake:-
-  run("wget https://cmake.org/files/v3.5/cmake-3.5.2.tar.gz"),
-  run("tar xf cmake-3.5.2.tar.gz"),
+  run("wget https://cmake.org/files/v3.5/cmake-3.5.1.tar.gz"),
+  run("tar xf cmake-3.5.1.tar.gz"),
   (
     run("./configure"),
     run("make"),
     run("make install")
-  )::in_workdir("/cmake-3.5.2").
+  )::in_workdir("/cmake-3.5.1").
+
+
+#--------------------------------------------------------------------------------------------------
+
 
 # install python, pip and install essential packages
 install_python :-
@@ -30,20 +44,20 @@ pip_install :-
   run("pip3 install more_itertools"),
   run("pip3 install pre-commit").
   
+#--------------------------------------------------------------------------------------------------
 
 copy_patchprocess:-
   run("mkdir cerberus"),
   copy("./cerberus", "/cerberus").
 
 
+#--------------------------------------------------------------------------------------------------
+
 # build f1x
 build_tool("f1x") :-
   clone_tool("f1x"),
   clone_llvm.
 
-install_dependencies :-
-  run("DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y build-essential gcovr zlib1g-dev libtinfo-dev"),
-  run("apt install -y libboost-filesystem-dev libboost-program-options-dev libboost-log-dev").
 
 clone_tool("f1x") :-
   run("mkdir /home/f1x_tool"),
@@ -53,10 +67,12 @@ clone_llvm :-
   copy("./llvm-3.8.1.tar.xz", "/"),
   run("tar xf llvm-3.8.1.tar.xz").
 
+#-------------------------------------------------------------------------------------------------
+
 environments(tool) :-
   base_image,
   install_packages,
-  install_python,
+  # install_python,
   # copy_patchprocess,
   build_tool(tool).
 
