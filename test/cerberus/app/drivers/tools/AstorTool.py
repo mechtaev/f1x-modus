@@ -1,23 +1,23 @@
-import os
+import math
 from os.path import join
-
+import re
 from app.core import definitions, emitter, values
 from app.core import utilities
 from app.drivers.tools.AbstractTool import AbstractTool
 
 
-class Nopol(AbstractTool):
-    nopol_home = "/opt/nopol"
-    nopol_version = "0.0.3"
-    dir_source = ""
+class AstorTool(AbstractTool):
+
+    astor_home = "/opt/astor"
+    astor_version = "2.0.0"
+    mode = None
 
     def __init__(self):
-        self.name = os.path.basename(__file__)[:-3].lower()
-        super(Nopol, self).__init__(self.name)
-        self.image_name = "rshariffdeen/nopol"
+        super(AstorTool, self).__init__(self.name)
+        self.image_name = "rshariffdeen/astor"
 
     def repair(self, bug_info, config_info):
-        super(Nopol, self).repair(bug_info, config_info)
+        super(AstorTool, self).repair(bug_info, config_info)
         """ 
             self.dir_logs - directory to store logs
             self.dir_setup - directory to access setup scripts
@@ -26,43 +26,46 @@ class Nopol(AbstractTool):
         """
 
         timeout_h = str(config_info[definitions.KEY_CONFIG_TIMEOUT])
-        failing_test_list = bug_info[definitions.KEY_FAILING_TEST]
-        dir_java_src = self.dir_expr + "/src/" + bug_info["source_directory"]
-        self.dir_source = dir_java_src
+        timeout_m = str(float(timeout_h) * 60)
+        max_gen = 1000000
 
-        dir_java_bin = join(self.dir_expr, "src", bug_info["class_directory"])
-        dir_test_bin = join(self.dir_expr, "src", bug_info["test_class_directory"])
+        dir_java_src = join(self.dir_expr, "src", bug_info["source_directory"])
+        dir_test_src = join(self.dir_expr, "src", bug_info["test_directory"])
+        dir_java_bin = bug_info["class_directory"]
+        dir_test_bin = bug_info["test_class_directory"]
 
-        list_deps = [join(self.dir_expr, dep) for dep in bug_info["dependencies"]]
-        list_deps.append(join(self.nopol_home, "nopol/lib/hamcrest-core-1.3.jar"))
-        list_deps.append(join(self.nopol_home, "nopol/lib/junit-4.11.jar"))
-        list_deps.append(dir_java_bin)
-        list_deps.append(dir_test_bin)
-
+        # there is a bug in running Lang subjects with asm.jar
+        list_deps = [
+            f"{self.dir_expr}/{x}"
+            for x in bug_info["dependencies"]
+            if not (
+                bug_info[definitions.KEY_SUBJECT].lower() == "lang" and "asm.jar" in x
+            )
+        ]
+        list_deps.append(f"{self.astor_home}/external/lib/hamcrest-core-1.3.jar")
+        list_deps.append(f"{self.astor_home}/external/lib/junit-4.11.jar")
         list_deps_str = ":".join(list_deps)
 
-        test_classes_str = " ".join(failing_test_list)
-        nopol_jar_path = (
-            f"{self.nopol_home}/nopol/nopol-{self.nopol_version}"
-            f"-SNAPSHOT-jar-with-dependencies.jar"
-        )
-
-        solver_name = "z3"  # z3 or cvc4
-        solver_path = f"{self.nopol_home}/nopol/lib/z3/z3_for_linux"
-        max_generations = 2000000
-        test_timeout = 30000
         # generate patches
         self.timestamp_log_start()
         repair_command = (
-            f"timeout -k 5m {timeout_h}h java -jar {nopol_jar_path} nopol "
-            f"{dir_java_src} "
-            f"{list_deps_str} "
-            f"{solver_name} "
-            f"{solver_path} "
-            f"{test_classes_str} "
+            f"timeout -k 5m {timeout_h}h "
+            f"java -cp target/astor-{self.astor_version}-jar-with-dependencies.jar "
+            f"fr.inria.main.evolution.AstorMain "
+            f"-mode {self.mode} "
+            + (f"-loglevel DEBUG " if values.debug else "-loglevel INFO ")
+            + f"-srcjavafolder {dir_java_src} "
+            f"-srctestfolder {dir_test_src}  "
+            f"-binjavafolder {dir_java_bin} "
+            f"-bintestfolder  {dir_test_bin} "
+            f"-location {self.dir_expr}/src "
+            f"-dependencies {list_deps_str} "
+            f"-maxgen {max_gen} "
+            f"-maxtime {int(math.ceil(float(timeout_m)))} "
+            f"-stopfirst false "
         )
 
-        status = self.run_command(repair_command, self.log_output_path, self.dir_output)
+        status = self.run_command(repair_command, self.log_output_path, self.astor_home)
 
         if status != 0:
             self._error.is_error = True
@@ -84,11 +87,13 @@ class Nopol(AbstractTool):
         logs folder -> self.dir_logs
         The parent method should be invoked at last to archive the results
         """
-
-        patch_dir = f"{self.dir_source}/spoon"
-        copy_command = "cp -rf {} {}".format(patch_dir, self.dir_output)
-        self.run_command(copy_command)
-        super(Nopol, self).save_artefacts(dir_info)
+        list_artifact_dirs = [
+            self.astor_home + "/" + x for x in ["diffSolutions", "output_astor"]
+        ]
+        for d in list_artifact_dirs:
+            copy_command = f"cp -rf {d} {self.dir_output}"
+            self.run_command(copy_command)
+        super(AstorTool, self).save_artefacts(dir_info)
 
     def analyse_output(self, dir_info, bug_id, fail_list):
         """
@@ -112,6 +117,7 @@ class Nopol(AbstractTool):
 
         count_plausible = 0
         count_enumerations = 0
+        count_compilable = 0
 
         # count number of patch files
         list_output_dir = self.list_dir(self.dir_output)
@@ -131,15 +137,23 @@ class Nopol(AbstractTool):
             self._time.timestamp_start = log_lines[0].replace("\n", "")
             self._time.timestamp_end = log_lines[-1].replace("\n", "")
             for line in log_lines:
-                if "Applying patch" in line:
-                    count_enumerations += 1
-                elif "PATCH FOUND" in line:
+                if "child compiles" in line.lower():
+                    count_compilable += 1
+                    child_id = int(str(re.search(r"id (.*)", line).group(1)).strip())
+                    if child_id > count_enumerations:
+                        count_enumerations = child_id
+                elif "found solution," in line.lower():
                     count_plausible += 1
 
         self._space.generated = len(
-            [x for x in self.list_dir(join(self.dir_source, "spooned")) if ".java" in x]
+            [
+                x
+                for x in self.list_dir(join(self.astor_home, "diffSolutions"))
+                if ".diff" in x
+            ]
         )
         self._space.enumerations = count_enumerations
         self._space.plausible = count_plausible
+        self._space.non_compilable = count_enumerations - count_compilable
 
         return self._space, self._time, self._error

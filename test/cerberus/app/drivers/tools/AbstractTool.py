@@ -1,6 +1,7 @@
 import abc
 import os
 import re
+import time
 from datetime import datetime
 from os.path import join
 
@@ -11,7 +12,7 @@ from app.core import (
     definitions,
     abstractions,
     analysis,
-    utilities
+    utilities,
 )
 from app.core.utilities import execute_command, error_exit
 
@@ -94,8 +95,20 @@ class AbstractTool:
             self.dir_base_expr = values.dir_experiments
 
     def timestamp_log(self):
-        timestamp_command = "date -u '+%a %d %b %Y %H:%M:%S %p'"
-        self.run_command(timestamp_command, self.log_output_path)
+        time_now = time.strftime("%a %d %b %Y %H:%M:%S %p")
+        timestamp_txt = f"{time_now}"
+        self.append_file(timestamp_txt, self.log_output_path)
+
+    def timestamp_log_start(self):
+        time_now = time.strftime("%a %d %b %Y %H:%M:%S %p")
+        timestamp_txt = f"{time_now}\n"
+        self.append_file(timestamp_txt, self.log_output_path)
+
+    def timestamp_log_end(self):
+        time_now = time.strftime("%a %d %b %Y %H:%M:%S %p")
+        timestamp_txt = f"\n{time_now}"
+        self.append_file(timestamp_txt, self.log_output_path)
+
 
     def run_command(
         self, command_str, log_file_path="/dev/null", dir_path="/experiment", env=None
@@ -121,7 +134,7 @@ class AbstractTool:
         """instrumentation for the experiment as needed by the tool"""
         emitter.normal("\t\t\t instrumenting for " + self.name)
         bug_id = bug_info[definitions.KEY_BUG_ID]
-        conf_id = str(values.config_id)
+        conf_id = str(values.current_profile_id)
         buggy_file = bug_info[definitions.KEY_FIX_FILE]
         self.log_instrument_path = join(
             self.dir_logs, "{}-{}-{}-instrument.log".format(conf_id, self.name, bug_id)
@@ -163,9 +176,7 @@ class AbstractTool:
         if self.container_id:
             clean_command = "rm -rf /output/patch* /logs/*"
             self.run_command(clean_command, "/dev/null", "/")
-            script_path = values.dir_scripts + "/{}-dump-patches.py".format(
-                self.name
-            )
+            script_path = values.dir_scripts + "/{}-dump-patches.py".format(self.name)
             cp_script_command = "docker cp {} {}:{} ".format(
                 script_path, self.container_id, self.dir_expr
             )

@@ -41,7 +41,9 @@ class GenProg(AbstractTool):
                 p_size=count_pass,
                 n_size=count_neg,
                 dir_exp=self.dir_expr,
-                program="{}.cil.i".format(join(self.dir_expr,"src",bug_info[definitions.KEY_BINARY_PATH]))
+                program="{}.cil.i".format(
+                    join(self.dir_expr, "src", bug_info[definitions.KEY_BINARY_PATH])
+                ),
             )
         )
         if fix_location:
@@ -58,7 +60,7 @@ class GenProg(AbstractTool):
         )
         self.run_command(save_command, self.log_output_path, join(self.dir_expr, "src"))
 
-        self.timestamp_log()
+        self.timestamp_log_start()
 
         repair_command = 'bash -c \'export PATH="/root/.opam/4.12.0/bin/:$PATH"; timeout -k 5m {1}h  '.format(
             join(self.dir_expr, "src"), str(timeout)
@@ -77,7 +79,7 @@ class GenProg(AbstractTool):
         else:
             emitter.success("\t\t\t[success] {0} ended successfully".format(self.name))
         emitter.highlight("\t\t\tlog file: {0}".format(self.log_output_path))
-        self.timestamp_log()
+        self.timestamp_log_end()
 
     def save_artefacts(self, dir_info):
         emitter.normal("\t\t\t saving artefacts of " + self.name)
@@ -128,7 +130,7 @@ class GenProg(AbstractTool):
     def analyse_output(self, dir_info, bug_id, fail_list):
         emitter.normal("\t\t\t analysing output of " + self.name)
         dir_results = join(self.dir_expr, "result")
-        conf_id = str(values.config_id)
+        conf_id = str(values.current_profile_id)
         self.log_analysis_path = join(
             self.dir_logs,
             "{}-{}-{}-analysis.log".format(conf_id, self.name.lower(), bug_id),

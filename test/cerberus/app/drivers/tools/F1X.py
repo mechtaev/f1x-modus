@@ -14,7 +14,7 @@ class F1X(AbstractTool):
 
     def generate_test_driver(self):
         test_script_path = self.dir_setup + "/test.sh"
-        test_driver_path = self.dir_expr+ "/f1x-test"
+        test_driver_path = self.dir_expr + "/f1x-test"
 
         self.write_file(
             ["#!/bin/bash\n", "bash {0} /experiment $@".format(test_script_path)],
@@ -45,7 +45,11 @@ class F1X(AbstractTool):
         )
         self.generate_test_driver()
         test_driver_path = join(self.dir_expr, "f1x-test")
-        build_script_path = join(self.dir_setup, "build.sh") if not self.is_file(join(self.dir_inst,"build.sh")) else join(self.dir_inst,"build.sh")
+        build_script_path = (
+            join(self.dir_setup, "build.sh")
+            if not self.is_file(join(self.dir_inst, "build.sh"))
+            else join(self.dir_inst, "build.sh")
+        )
         test_id_list = ""
         for test_id in failing_test_list:
             test_id_list += test_id + " "
@@ -63,7 +67,7 @@ class F1X(AbstractTool):
         mkdir_command = "mkdir -p " + dir_patch
         self.run_command(mkdir_command, self.log_output_path, "/")
 
-        self.timestamp_log()
+        self.timestamp_log_start()
 
         repair_command = "timeout -k 5m {}h f1x ".format(str(timeout))
         repair_command += " -f {0} ".format(abs_path_buggy_file)
@@ -80,7 +84,9 @@ class F1X(AbstractTool):
         self.run_command(dry_command, self.log_output_path, self.dir_expr)
         all_command = (
             repair_command
-            + " --enable-assignment --disable-dteq --enable-validation  -a -o {}  ".format(self.dir_output)
+            + " --enable-assignment --disable-dteq --enable-validation  -a -o {}  ".format(
+                self.dir_output
+            )
         )
         if additional_tool_param:
             all_command = all_command + " " + additional_tool_param
@@ -99,7 +105,7 @@ class F1X(AbstractTool):
 
         if values.dump_patches:
             self.create_patches_from_space(fix_file)
-        self.timestamp_log()
+        self.timestamp_log_end()
 
     def create_patches_from_space(self, source_file):
         script_name = "{}/{}-dump-patches.py".format(self.dir_expr, self.name)
@@ -414,7 +420,7 @@ class F1X(AbstractTool):
     def analyse_output(self, dir_info, bug_id, fail_list):
         emitter.normal("\t\t\t analysing output of " + self.name)
         dir_results = join(self.dir_expr, "result")
-        conf_id = str(values.config_id)
+        conf_id = str(values.current_profile_id)
         self.log_analysis_path = join(
             self.dir_logs,
             "{}-{}-{}-analysis.log".format(conf_id, self.name.lower(), bug_id),

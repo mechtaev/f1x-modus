@@ -47,8 +47,7 @@ pip_install :-
 #--------------------------------------------------------------------------------------------------
 
 copy_patchprocess:-
-  run("mkdir cerberus"),
-  copy("./cerberus", "/cerberus").
+  run("git clone https://github.com/nus-apr/cerberus.git").
 
 
 #--------------------------------------------------------------------------------------------------
@@ -83,10 +82,10 @@ environments(tool) :-
   (
     base_image,
     install_packages,
-    # install_python,
-    # copy_patchprocess,
+    install_python,
+    copy_patchprocess,
     build_tool(tool)
-  )::append_path("/home/f1x_tool/build/tools:").
+  )::append_path("/home/f1x_tool/build/tools:/cerberus/bin").
 
 
   

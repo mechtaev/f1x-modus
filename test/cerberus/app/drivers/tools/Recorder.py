@@ -2,18 +2,24 @@ import os
 from os.path import join
 
 from app.core import definitions, emitter
-from app.core import utilities
+from app.core import utilities, values
 from app.drivers.tools.AbstractTool import AbstractTool
 
 
-class SequenceR(AbstractTool):
+class Recorder(AbstractTool):
+    """
+    Requirements for this tool:
+    15 GB of VRAM, at most 7.0 CUDA (e.g. Nvidia V100) compute and 20 GB of RAM
+    """
+
     def __init__(self):
         self.name = os.path.basename(__file__)[:-3].lower()
-        super(SequenceR, self).__init__(self.name)
-        self.image_name = "zimin/sequencer:1.0"
+        super(Recorder, self).__init__(self.name)
+        self.image_name = "zqh111/recoder:interface"
+        self.bug_name = ""
 
     def repair(self, bug_info, config_info):
-        super(SequenceR, self).repair(bug_info, config_info)
+        super(Recorder, self).repair(bug_info, config_info)
         """ 
             self.dir_logs - directory to store logs
             self.dir_setup - directory to access setup scripts
@@ -23,57 +29,34 @@ class SequenceR(AbstractTool):
 
         timeout_h = str(config_info[definitions.KEY_CONFIG_TIMEOUT])
 
-        # The zimin/sequencer container has a bug which can only be found after be found after a removal
-        # of a /dev/null pipe in sequencer-predict
-        self.run_command(
-            "sed -i '183s/1\s*-\s*/~/' ./onmt/modules/global_attention.py",
-            "/dev/null",
-            "/SequenceR/src/lib/OpenNMT-py",
+        if not values.use_gpu:
+            utilities.error_exit("Cannot run Recorder without a GPU")
+
+        self.bug_name = "{}-{}".format(
+            bug_info[definitions.KEY_SUBJECT],
+            bug_info[definitions.KEY_BUG_ID],
         )
-
-        if (
-            bug_info[definitions.KEY_FIX_FILE] == ""
-            or len(bug_info[definitions.KEY_FIX_LINES]) < 1
-        ):
-            utilities.error_exit(
-                "Cannot apply SequenceR on an experiment with no given buggy file or line"
-            )
-
         # generate patches
         self.timestamp_log_start()
-        file = (
-            join(
-                bug_info[definitions.KEY_SOURCE_DIRECTORY],
-                bug_info[definitions.KEY_FIX_FILE].replace(".", "/"),
-            )
-            + ".java"
-        )  # construct the file's path
-        sequencer_command = "timeout -k 5m {}h ./sequencer-predict.sh --buggy_file={} --buggy_line={} --beam_size=100 --output={}".format(
+        recorder_command = "bash -c 'export PATH=$PATH:/root/defects4j/framework/bin && timeout -k 5m {}h python3 testDefect4jv21.py {}-{}'".format(  # currently supporting only defects4j
             timeout_h,
-            join(self.dir_expr, "src", file),
-            bug_info[definitions.KEY_FIX_LINES][0],
-            join(self.dir_output, "patches"),
+            bug_info[definitions.KEY_SUBJECT],
+            bug_info[definitions.KEY_BUG_ID],
         )
         status = self.run_command(
-            sequencer_command, self.log_output_path, "/SequenceR/src"
+            recorder_command, self.log_output_path, "/root/Repair/"
         )
 
-        sequencer_command = (
-            "timeout -k 5m {3}h python3 validatePatch.py {0} {1} {2}".format(
-                join(self.dir_output, "patches"),
-                join(
-                    self.dir_expr,
-                    "src",
-                ),
-                join(self.dir_expr, "src", file),
-                timeout_h,
-            )
+        recorder_command = "bash -c 'export PATH=$PATH:/root/defects4j/framework/bin && timeout -k 5m {}h python3 repair.py {}-{}'".format(
+            timeout_h,
+            bug_info[definitions.KEY_SUBJECT],
+            bug_info[definitions.KEY_BUG_ID],
         )
 
         status = self.run_command(
-            sequencer_command,
+            recorder_command,
             self.log_output_path,
-            "/SequenceR/src/Defects4J_Experiment",
+            "/root/Repair/",
         )
 
         if status != 0:
@@ -122,10 +105,7 @@ class SequenceR(AbstractTool):
         count_enumerations = 0
 
         # count number of patch files
-        list_output_dir = self.list_dir(self.dir_output)
-        self._space.generated = len(
-            [name for name in list_output_dir if ".patch" in name]
-        )
+        self._space.generated = 1
 
         # extract information from output log
         if not self.log_output_path or not self.is_file(self.log_output_path):
@@ -140,14 +120,12 @@ class SequenceR(AbstractTool):
             self._time.timestamp_end = log_lines[-1].replace("\n", "")
 
         if not self._error.is_error:
-            patch_space = self.list_dir("/output/patches")
-            self._space.generated = len(patch_space)
-            self._space.enumerations = len(patch_space)
-            self._space.plausible = len(
-                list(filter(lambda x: "passed" in x, patch_space))
+            self.run_command(
+                "cp /root/Repair/patches/{}patch.txt /output/".format(self.bug_name)
             )
-            self._space.non_compilable = (
-                self._space.generated - self._space.enumerations
-            )
+            self._space.generated = 1
+            self._space.enumerations = 1
+            self._space.plausible = 1
+            self._space.non_compilable = 0
 
         return self._space, self._time, self._error

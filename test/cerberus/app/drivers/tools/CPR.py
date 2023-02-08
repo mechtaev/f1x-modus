@@ -17,11 +17,11 @@ class CPR(AbstractTool):
         super(CPR, self).repair(bug_info, config_info)
         if values.only_instrument:
             return
-        conf_id = str(values.config_id)
+        conf_id = str(values.current_profile_id)
         bug_id = str(bug_info[definitions.KEY_BUG_ID])
         self.id = bug_id
         timeout = str(config_info[definitions.KEY_CONFIG_TIMEOUT])
-        dir_patch = join(self.dir_output,"patches")
+        dir_patch = join(self.dir_output, "patches")
         mkdir_command = "mkdir -p " + dir_patch
         self.run_command(mkdir_command, self.log_output_path, "/")
         self.log_output_path = join(
@@ -34,11 +34,17 @@ class CPR(AbstractTool):
         seed_id_list = ",".join(bug_info[definitions.KEY_PASSING_TEST])
 
         additional_tool_param = config_info[definitions.KEY_TOOL_PARAMS]
-        self.timestamp_log()
-        cpr_command = "bash -c 'stty cols 100 && stty rows 100 && timeout -k 5m {0}h cpr --conf=".format(timeout) + conf_path + " "
+        self.timestamp_log_start()
+        cpr_command = (
+            "bash -c 'stty cols 100 && stty rows 100 && timeout -k 5m {0}h cpr --conf=".format(
+                timeout
+            )
+            + conf_path
+            + " "
+        )
         cpr_command += " --seed-id-list=" + seed_id_list + " "
         cpr_command += " --test-id-list=" + test_id_list + " "
-        cpr_command += "{0} --time-duration={1}' >> {2} 2>&1 ".format( 
+        cpr_command += "{0} --time-duration={1}' >> {2} 2>&1 ".format(
             additional_tool_param, str(timeout_m), self.log_output_path
         )
         status = self.run_command(cpr_command, self.log_output_path)
@@ -50,27 +56,27 @@ class CPR(AbstractTool):
             )
             if status == 137:
                 # Due to the container being killed, we restart it to be able to pull out the information
-                container.stop_container(self.container_id) 
-                container.start_container(self.container_id) 
+                container.stop_container(self.container_id)
+                container.start_container(self.container_id)
                 pass
 
             self._error.is_error = True
         else:
             emitter.success("\t\t\t[success] {0} ended successfully".format(self.name))
-        self.timestamp_log()
+        self.timestamp_log_end()
         emitter.highlight("\t\t\tlog file: {0}".format(self.log_output_path))
 
     def save_artefacts(self, dir_info):
         emitter.normal("\t\t\t saving artefacts of " + self.name)
-        dir_patch = join(self.dir_output,"patches")
-        self.run_command("cp -rf /CPR/output/{} {}".format(self.id,dir_patch))
+        dir_patch = join(self.dir_output, "patches")
+        self.run_command("cp -rf /CPR/output/{} {}".format(self.id, dir_patch))
         super(CPR, self).save_artefacts(dir_info)
         return
 
     def analyse_output(self, dir_info, bug_id, fail_list):
         emitter.normal("\t\t\t analysing output of " + self.name)
         dir_results = join(self.dir_expr, "result")
-        conf_id = str(values.config_id)
+        conf_id = str(values.current_profile_id)
         self.log_analysis_path = join(
             self.dir_logs,
             "{}-{}-{}-analysis.log".format(conf_id, self.name.lower(), bug_id),

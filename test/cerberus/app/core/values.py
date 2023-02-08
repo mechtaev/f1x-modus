@@ -18,6 +18,7 @@ dir_libs = dir_main + "/libs"
 dir_scripts = dir_main + "/scripts"
 dir_artifacts = dir_output_base + "/artifacts"
 dir_output = ""
+dir_summaries = dir_main + "/summaries"
 
 
 file_main_log = ""
@@ -46,7 +47,7 @@ bug_index_list = None
 bug_id_list = None
 skip_index_list = None
 benchmark_name = None
-config_id_list = ["C1"]
+profile_id_list = None
 subject_name = None
 is_purge = False
 only_analyse = False
@@ -56,6 +57,7 @@ show_dev_patch = False
 use_container = True
 dump_patches = False
 use_valkyrie = False
+use_gpu = False
 use_vthreads = False
 rebuild_all = False
 rebuild_base = False
@@ -70,7 +72,7 @@ dump_patches = False
 arg_pass = False
 iteration_no = -1
 analysis_results = dict()
-config_id = None
+current_profile_id = None
 
 
 running_tool = False
@@ -104,10 +106,22 @@ apr_max_limit = {
     "darjeeling": 100,
 }
 
+
 def get_list_tools():
-    return list(l.replace(".py", "").lower() for l
-                in filter(lambda x: "__" not in x and "abstract" not in x.lower(), os.listdir(dir_tool_drivers)))
+    return list(
+        l.replace(".py", "").lower()
+        for l in filter(
+            lambda x: "__" not in x and "abstract" not in x.lower(),
+            os.listdir(dir_tool_drivers),
+        )
+    )
+
 
 def get_list_benchmarks():
-    return list(l.replace(".py", "").lower() for l
-                in filter(lambda x: "__" not in x and "abstract" not in x.lower(), os.listdir(dir_benchmark_drivers)))
+    return list(
+        l.replace(".py", "").lower()
+        for l in filter(
+            lambda x: "__" not in x and "abstract" not in x.lower(),
+            os.listdir(dir_benchmark_drivers),
+        )
+    )
