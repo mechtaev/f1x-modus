@@ -1,6 +1,6 @@
-# base image ubuntu 20:04
+# base image ubuntu 14:04
 base_image :-
-  from("ubuntu:20.04").
+  from("ubuntu:14.04").
 
 #-------------------------------------------------------------------------------------------------
 
@@ -9,8 +9,8 @@ install_packages :-
   run("apt update && apt install -y git"),
   run("apt install -y wget"),
   install_dependencies,
-  # run("DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y cmake").
-  install_cmake.
+  install_cmake,
+  run("apt install -y gcc").
 
 
 # build essentials (which is also required by f1x)
@@ -56,24 +56,37 @@ copy_patchprocess:-
 # build f1x
 build_tool("f1x") :-
   clone_tool("f1x"),
-  clone_llvm.
+  install_llvm,
+  compile_tool("f1x").
 
-
+# download f1x repository
 clone_tool("f1x") :-
   run("mkdir /home/f1x_tool"),
   run("git clone https://github.com/mechtaev/f1x.git /home/f1x_tool").
   
-clone_llvm :-
-  copy("./llvm-3.8.1.tar.xz", "/"),
-  run("tar xf llvm-3.8.1.tar.xz").
+# download LLVM and Clang 3.8.1
+install_llvm :-
+  run("wget http://releases.llvm.org/3.8.1/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz"),
+  run("tar xf clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04.tar.xz").
+  
+# compile f1x
+compile_tool("f1x") :-
+  run("mkdir /home/f1x_tool/build"),
+  (
+    run("cmake -DF1X_LLVM=/clang+llvm-3.8.1-x86_64-linux-gnu-ubuntu-14.04 .."),
+    run("make")
+  )::in_workdir("/home/f1x_tool/build").
 
 #-------------------------------------------------------------------------------------------------
 
 environments(tool) :-
-  base_image,
-  install_packages,
-  # install_python,
-  # copy_patchprocess,
-  build_tool(tool).
+  (
+    base_image,
+    install_packages,
+    # install_python,
+    # copy_patchprocess,
+    build_tool(tool)
+  )::append_path("/home/f1x_tool/build/tools:").
+
 
   
