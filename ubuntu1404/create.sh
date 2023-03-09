@@ -3,10 +3,10 @@ set -euo pipefail
 
 
 echo Print proof tree
-modus proof . 'environments("f1x")'
+modus proof . 'environments("f1x", "manybugs")'
 
 echo Build image based on Modusfile
-modus build . 'environments("f1x")' --json=build.json
+modus build . 'environments("f1x", "manybugs")' --json=build.json
 
 jq . build.json
 
