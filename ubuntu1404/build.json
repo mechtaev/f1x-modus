@@ -2,8 +2,11 @@
   {
     "predicate": "environments",
     "args": [
-      "f1x"
+      "f1x",
+      "manybugs",
+      "php",
+      "2"
     ],
-    "digest": "sha256:667c620adb63ad12cd5b67ad4cd9b17fb901b2d71e1ec3db67858a61be358b31"
+    "digest": "sha256:e5319b0e4c3fa2f7dc71c709fe50e458c8310d93b7e5468947eb4a20dc4491f0"
   }
 ]
