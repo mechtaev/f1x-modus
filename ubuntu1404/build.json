@@ -4,9 +4,9 @@
     "args": [
       "f1x",
       "manybugs",
-      "php",
-      "2"
+      "python",
+      "3"
     ],
-    "digest": "sha256:e5319b0e4c3fa2f7dc71c709fe50e458c8310d93b7e5468947eb4a20dc4491f0"
+    "digest": "sha256:d8739d0c366ba9e36b36240df4acd2ca405ff4a706396880bc4b2d044d64bbba"
   }
 ]
